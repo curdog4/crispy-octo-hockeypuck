@@ -7,6 +7,7 @@ import fcntl
 import psutil
 import requests
 import time
+import datetime
 import logging
 import logging.handlers
 import json
@@ -44,11 +45,11 @@ except OSError as e:
         sys.stderr.write("Warning: PID '%d' found to be running. Checking to see if that is us.\n" % (lastPid))
         for process in psutil.process_iter():
             if process.pid == lastPid:
-                if os.argv[1] == process.cmdline()[1]:
+                if sys.argv[1] == process.cmdline()[1]:
                     sys.stderr.write("Error: unable to lock lock file '%s': %s. Still held by '%d' (%s).\n" % (lockFile, e, process.pid, process.cmdline()[1]))
                     sys.exit(1)
                 else:
-                    sys.stderr.write("Warning: PID '%d' is not us: %s != %s\n" % (process.pid, process.cmdline()[1], os.argv[1]))
+                    sys.stderr.write("Warning: PID '%d' is not us: %s != %s\n" % (process.pid, process.cmdline()[1], sys.argv[1]))
                 break
         pass
     else:
@@ -164,18 +165,27 @@ url = tmpl.substitute(config)
 logger.info("Requesting URL '%s'", url)
 
 response = None
-
+obj = {}
+cacheFilename = 'SunRiseSetTimes.json'
 try:
     response = requests.get(url)
+    #data = response.json()
+    obj = response.json()
+    logger.info("Request return HTTP %d", response.status_code)
+    response.close()
+    logger.debug("Response data:\n%s", json.dumps(obj, sort_keys=True, indent=4, separators=(',',': ')))
+    hCachefile = open(cacheFilename, 'w')
+    hCachefile.write(json.dumps(obj, sort_keys=True, indent=4))
+    hCachefile.close()
 except Exception as e:
-    logger.error("Error connecting to URL '%s': %s", url, e)
-    sys.exit(1)
-
-#data = response.json()
-obj = response.json()
-logger.info("Request return HTTP %d", response.status_code)
-response.close()
-logger.debug("Response data:\n%s", json.dumps(obj, sort_keys=True, indent=4, separators=(',',': ')))
+    logger.error("Error connecting to URL '%s': %s. Attempt to load from cache file.", url, e)
+    fInfo = os.stat(cacheFilename)
+    if datetime.datetime.now() - datetime.datetime.fromtimestamp(fInfo.st_mtime) > datetime.timedelta(days=7):
+        logger.error('Error: Cache file is over a week old. Aborting.')
+        sys.exit(1)
+    hCachefile = open(cacheFilename, 'r')
+    obj = json.load(hCachefile)
+    hCachefile.close()
 
 eventkeys = (
     'astronomical_twilight_begin',
