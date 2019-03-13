@@ -13,7 +13,7 @@ logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 
 ch = logging.StreamHandler()
-ch.setLevel(logging.INFO)
+ch.setLevel(logging.DEBUG)
 
 #fh = logging.Formatter("[%(asctime)s] %(levelname)s: %(filename)s:%(funcName)s:%(lineno)d - %(message)s")
 fh = logging.Formatter("[%(asctime)s] %(levelname)s: %(message)s")
@@ -29,6 +29,10 @@ def loop(metrics_queue):
     (temperature,humidity) = (0.0,0.0)
     probe_start = time.time()
     humidity, temperature = Adafruit_DHT.read_retry(Adafruit_DHT.AM2302,'4')
+    if not temperature or not humidity:
+        logger.error("Unable to get temperature or humidity from sensor. Aborting.")
+        sys.exit(1)
+    logger.debug("Got temperature=%s, humidity=%s", temperature, humidity)
     metrics_queue["th_probe_time"].append( time.time() - probe_start )
     tempf = 9.0 * temperature / 5.0 + 32.0
     #photocellReading = GPIO.input(photocellPin)
