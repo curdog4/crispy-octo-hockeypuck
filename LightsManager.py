@@ -166,7 +166,7 @@ logger.info("Requesting URL '%s'", url)
 
 response = None
 obj = {}
-cacheFilename = 'SunRiseSetTimes.json'
+cacheFilename = '/root/var/SunRiseSetTimes.json'
 try:
     response = requests.get(url)
     #data = response.json()
@@ -240,6 +240,9 @@ try:
     #logger.info("Current channel function: %s", repr(GPIO.gpio_function(txpin)))
 
     waittime = timedata.get('sunrise') - time.time()
+    while waittime < 0:
+        # this happens if loading from cache...
+        waittime += 60 * 60 * 24
     #waittime = 10
     logger.info("Sleep until '%s' (%d seconds) before turning lights on.", time.asctime(time.localtime(timedata.get('sunrise'))), waittime)
     time.sleep(waittime)
