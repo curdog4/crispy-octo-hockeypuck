@@ -243,7 +243,6 @@ try:
     while waittime < 0:
         # this happens if loading from cache...
         waittime += 60 * 60 * 24
-    #waittime = 10
     logger.info("Sleep until '%s' (%d seconds) before turning lights on.", time.asctime(time.localtime(timedata.get('sunrise'))), waittime)
     time.sleep(waittime)
     logger.info("Sleep over. Let's turn on dem lights...")
@@ -301,7 +300,9 @@ try:
         time.sleep(pulsewait)
 
     waittime = timedata.get('sunset') - time.time()
-    #waittime = 10
+    while waittime < 0:
+        # if loading from cache
+        waittime += 60 * 60 * 24
     logger.info("Sleep until '%s' (%d seconds) before turning lights off.", time.asctime(time.localtime(timedata.get('sunset'))), waittime)
     time.sleep(waittime)
     logger.info("Sleep over. Let's turn dem lights off...")
