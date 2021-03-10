@@ -131,18 +131,18 @@ def get_lock():
     try:
         rv = fcntl.flock(lock_handle, fcntl.LOCK_EX|fcntl.LOCK_NB)
     except OSError as err:
-        LOGGER.error('Lock file last held by %d. Checking to see if PID still running.', last_pid)
+        LOGGER.error('Lock file last held by %s. Checking to see if PID still running.', last_pid)
         if last_pid and psutil.pid_exists(last_pid):
-            LOGGER.error('PID %d found to be running. Checking to see if that is this process.', last_pid)
+            LOGGER.error('PID %s found to be running. Checking to see if that is this process.', last_pid)
             success = True
             for process in psutil.process_iter():
                 if process.pid == last_pid:
                     if sys.argv[1] == process.cmdline()[1]:
-                        LOGGER.error('Unable to lock file %s: %s. Still held by %d (%s).', LOCKFILE, err, process.pid,
+                        LOGGER.error('Unable to lock file %s: %s. Still held by %s (%s).', LOCKFILE, err, process.pid,
                                      process.cmdline()[1])
                         success = False
                     else:
-                        LOGGER.error('PID %d is not us: %s != %s', process.pid, process.cmdline()[1], sys.argv[1])
+                        LOGGER.error('PID %s is not us: %s != %s', process.pid, process.cmdline()[1], sys.argv[1])
                         success = False
                     break
             if not success:
@@ -221,7 +221,7 @@ def get_timedeltas(data):
         LOGGER.info('Delta to sunrise: %s seconds ago', deltas['sunrise'] * -1)
     sunset = datetime.datetime.fromisoformat(data.get('sunset'))
     LOGGER.info('Sunset: %s', sunset)
-    deltas.setdefault('sunset', (sunset - utc_now).total_seconds())
+    deltas.setdefault('sunset', (sunset - sunrise).total_seconds())
     if utc_now < sunset:
         LOGGER.info('Delta to sunset: %s seconds', deltas['sunset'])
     else:
